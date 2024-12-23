@@ -28,26 +28,26 @@
               inherit system overlays;
             };
 
-            backend = 
+            backend =
               let
                 rustToolchain = pkgs.rust-bin.nightly.latest.default.override {
                   extensions = [ "rust-src" ];
                 };
               in
               pkgs.rustPlatform.buildRustPackage {
-              cargoLock = {
-                lockFileContents = builtins.readFile ./Cargo.lock;
+                cargoLock = {
+                  lockFileContents = builtins.readFile ./Cargo.lock;
+                };
+                name = "backend";
+                src = ./.;
+                cargoBuildOptions = [ "-p backend" "--release" ];
+                nativeBuildInputs = [ rustToolchain pkgs.bash ];
+                # buildPhase = ''
+                #   cargo build -p backend --release
+                # '';
               };
-              name = "backend";
-              src = ./.;
-              cargoBuildOptions = [ "-p backend" "--release" ];
-              nativeBuildInputs = [ rustToolchain pkgs.bash ];
-              # buildPhase = ''
-              #   cargo build -p backend --release
-              # '';
-            };
 
-            frontend = 
+            frontend =
               let
                 rustToolchain = pkgs.rust-bin.nightly.latest.default.override {
                   extensions = [ "rust-src" ];
@@ -55,17 +55,17 @@
                 };
               in
               pkgs.rustPlatform.buildRustPackage {
-              cargoLock = {
-                lockFileContents = builtins.readFile ./Cargo.lock;
+                cargoLock = {
+                  lockFileContents = builtins.readFile ./Cargo.lock;
+                };
+                name = "frontend";
+                src = ./.;
+                # cargoBuildOptions = [ "-p frontend" "--release" ];
+                nativeBuildInputs = [ rustToolchain pkgs.trunk ];
+                buildPhase = ''
+                  cargo build --target wasm32-unknown-unknown -p frontend
+                '';
               };
-              name = "frontend";
-              src = ./.;
-              # cargoBuildOptions = [ "-p frontend" "--release" ];
-              nativeBuildInputs = [ rustToolchain pkgs.trunk ];
-              buildPhase = ''
-                cargo build --target wasm32-unknown-unknown -p frontend
-              '';
-            };
           in
           {
             devenv-up = self.devShells.${system}.default.config.procfileScript;
