@@ -27,45 +27,36 @@
             pkgs = import nixpkgs {
               inherit system overlays;
             };
+            rustToolchain = pkgs.rust-bin.nightly.latest.default.override {
+              extensions = [ "rust-src" ];
+              targets = [ "wasm32-unknown-unknown" "x86_64-unknown-linux-gnu" ];
+            };
 
-            backend =
-              let
-                rustToolchain = pkgs.rust-bin.nightly.latest.default.override {
-                  extensions = [ "rust-src" ];
-                };
-              in
-              pkgs.rustPlatform.buildRustPackage {
-                cargoLock = {
-                  lockFileContents = builtins.readFile ./Cargo.lock;
-                };
-                name = "backend";
-                src = ./.;
-                cargoBuildOptions = [ "-p backend" "--release" ];
-                nativeBuildInputs = [ rustToolchain pkgs.bash ];
-                # buildPhase = ''
-                #   cargo build -p backend --release
-                # '';
+            backend = pkgs.rustPlatform.buildRustPackage {
+              cargoLock = {
+                lockFileContents = builtins.readFile ./Cargo.lock;
               };
+              name = "backend";
+              src = ./.;
+              cargoBuildOptions = [ "-p backend" "--release" ];
+              nativeBuildInputs = [ rustToolchain ];
+              # buildPhase = ''
+              #   cargo build -p backend --release
+              # '';
+            };
 
-            frontend =
-              let
-                rustToolchain = pkgs.rust-bin.nightly.latest.default.override {
-                  extensions = [ "rust-src" ];
-                  targets = [ "wasm32-unknown-unknown" ];
-                };
-              in
-              pkgs.rustPlatform.buildRustPackage {
-                cargoLock = {
-                  lockFileContents = builtins.readFile ./Cargo.lock;
-                };
-                name = "frontend";
-                src = ./.;
-                # cargoBuildOptions = [ "-p frontend" "--release" ];
-                nativeBuildInputs = [ rustToolchain pkgs.trunk ];
-                buildPhase = ''
-                  cargo build --target wasm32-unknown-unknown -p frontend
-                '';
+            frontend = pkgs.rustPlatform.buildRustPackage {
+              cargoLock = {
+                lockFileContents = builtins.readFile ./Cargo.lock;
               };
+              name = "frontend";
+              src = ./.;
+              # cargoBuildOptions = [ "-p frontend" "--release" ];
+              nativeBuildInputs = [ rustToolchain pkgs.trunk ];
+              buildPhase = ''
+                cargo build --target wasm32-unknown-unknown -p frontend
+              '';
+            };
           in
           {
             devenv-up = self.devShells.${system}.default.config.procfileScript;
