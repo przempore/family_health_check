@@ -5,6 +5,7 @@ let
   # Define the Nginx configuration
   nginxConfig = pkgs.writeText "nginx.conf" ''
     user nobody nobody;
+    daemon off;
     error_log /dev/stdout info;
     pid /dev/null;
     
@@ -40,7 +41,7 @@ let
     set -eux -o pipefail
     # Initialize /var
     mkdir -p /var/log/nginx /var/cache/nginx/client_body
-    exec nginx -g "daemon off; error_log /dev/stderr debug;" -c /app/nginx.conf
+    exec nginx -c /app/nginx.conf
   '';
 
   # Define the Docker image
@@ -65,18 +66,11 @@ let
             -out $out/etc/nginx/ssl/fullchain.pem \
             -subj "/CN=localhost"
         '')
-       (pkgs.runCommand "nginx-logs" { buildInputs = [ pkgs.coreutils ]; } ''
-          mkdir -p $out/var/log/nginx
-        '')
       ];
     };
 
     extraCommands = ''
       mkdir -p tmp/nginx_client_body
-
-      # nginx still tries to read this directory even if error_log
-      # directive is specifying another file :/
-      # mkdir -p var/log/nginx
 
       mkdir -p app
       cp ${nginxConfig} app/nginx.conf
@@ -85,11 +79,6 @@ let
     # Ensure volumes are correctly configured
     config = {
       Cmd = [ entrypoint ];
-      # Cmd = [
-      #   "nginx"
-      #   "-c"
-      #   "/app/nginx.conf"
-      # ];
       Volumes = {
         "/etc/nginx" = { };
       };
