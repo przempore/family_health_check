@@ -1,0 +1,22 @@
+services:
+  backend:
+    image: backend:latest
+    container_name: backend-container
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx-container:latest
+    container_name: nginx-container
+    ports:
+      - "20153:20153"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

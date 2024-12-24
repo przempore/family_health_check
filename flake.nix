@@ -33,16 +33,13 @@
             };
 
             backend = pkgs.rustPlatform.buildRustPackage {
+              name = "backend";
+              src = ./.;
               cargoLock = {
                 lockFileContents = builtins.readFile ./Cargo.lock;
               };
-              name = "backend";
-              src = ./.;
-              cargoBuildOptions = [ "-p backend" "--release" ];
+              cargoBuildOptions = [ "--release" ];
               nativeBuildInputs = [ rustToolchain ];
-              # buildPhase = ''
-              #   cargo build -p backend --release
-              # '';
             };
 
             frontend = pkgs.rustPlatform.buildRustPackage {
@@ -67,19 +64,34 @@
             backend-docker = pkgs.dockerTools.buildImage {
               name = "backend";
               tag = "latest";
+
               config = {
-                Cmd = [ "${backend}/bin/backend" ];
+                Cmd = [ "/bin/backend" ];
                 WorkingDir = "/app";
                 ExposedPorts = { "3000/tcp" = { }; };
                 Volumes = {
                   "/data" = { };
                 };
               };
+              copyToRoot =
+                let
+                  onlyBackend = pkgs.runCommand "backend-binary" { buildInputs = [ pkgs.coreutils ]; } ''
+                    mkdir -p $out/bin
+                    cp ${backend}/bin/backend $out/bin/
+                  '';
+                in
+                pkgs.buildEnv {
+                  name = "backend";
+                  paths = [ onlyBackend pkgs.bash pkgs.coreutils ];
+                  pathsToLink = [ "/bin" ];
+                };
 
               runAsRoot = ''
                 mkdir -p /data
               '';
             };
+
+            nginxCert = import ./nginx.nix { inherit pkgs; };
 
             # TODO: frontend-docker
             frontend-docker = pkgs.dockerTools.buildImage {

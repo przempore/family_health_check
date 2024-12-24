@@ -7,7 +7,7 @@ async fn main() {
     let app = Router::new().route("/status", get(status_handler));
 
     // Define the address to run the server
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     println!("Server running on {}", addr);
 
     // Start the server
